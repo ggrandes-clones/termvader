@@ -6,8 +6,9 @@
 
 int main(int argc, char *argv[])
 {
-	if (argc != 3) {
-		fprintf(stderr, "Usage: %s /dev/tty[0-9]+ COMMANDS ...\n", argv[0]);
+	if (argc < 2) {
+		fprintf(stderr, "Usage: %s /dev/tty[0-9]+ [COMMANDS ...]\n", argv[0]);
+		fprintf(stderr, "If COMMANDS is blank, write only a new line.\n");
 		fprintf(stderr, "You can obtain the tty device from a particular terminal via the 'tty' command.\n");
 		fprintf(stderr, "Please note, you may have to run this program as root.\n");
 		return 1;
@@ -17,8 +18,14 @@ int main(int argc, char *argv[])
 		perror("open");
 		return errno;
 	}
-	for (char *c = argv[2]; *c; ++c) {
-		if (ioctl(ttyfd, TIOCSTI, c) == -1) {
+	for (int i = 2; i < argc; ++i) {
+		for (char *c = argv[i]; *c; ++c) {
+			if (ioctl(ttyfd, TIOCSTI, c) == -1) {
+				perror("ioctl");
+				return errno;
+			}
+		}
+		if (i != argc - 1 && ioctl(ttyfd, TIOCSTI, " ") == -1) {
 			perror("ioctl");
 			return errno;
 		}
